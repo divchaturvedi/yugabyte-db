@@ -1427,6 +1427,14 @@ void YBCGetAndResetReadRpcStats(YBCPgStatement handle, uint64_t* reads, uint64_t
   pgapi->GetAndResetReadRpcStats(handle, reads, read_wait, tbl_reads, tbl_read_wait);
 }
 
+YBCStatus YBCStartTraceForQuery() {
+  return ToYBCStatus(pgapi->StartTraceForQuery());
+}
+
+YBCStatus YBCStopTraceForQuery() {
+  return ToYBCStatus(pgapi->StopTraceForQuery());
+}
+
 YBCStatus YBCGetIndexBackfillProgress(YBCPgOid* index_oids, YBCPgOid* database_oids,
                                       uint64_t** backfill_statuses,
                                       int num_indexes) {
