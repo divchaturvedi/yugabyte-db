@@ -92,7 +92,7 @@
  *		global variables
  * ----------------
  */
-bool is_yb_tracing_toggled = false;
+bool prev_yb_tracing_enabled = false;
 const char *debug_query_string; /* client-supplied query string */
 
 /* Note: whereToSendOutput is initialized for the bootstrap/standalone case */
@@ -5121,21 +5121,32 @@ PostgresMain(int argc, char *argv[],
 		MemoryContextSwitchTo(MessageContext);
 		MemoryContextResetAndDeleteChildren(MessageContext);
 
+		/*
+		 * is_yb_tracing_enabled is an atomic variable in the shared memory which specifies whether tracing
+		 * is enabled for the backend or not.
+		 * prev_yb_tracing_enabled is a local boolean variable which tells us the previous state of 
+		 * is_yb_tracing_enabled. So if there is a mismatch between the two variables we know that tracing
+		 * was either enabled or disabled for the backend.
+		 */
 		if(pg_atomic_read_u32(&MyProc->is_yb_tracing_enabled))
 		{
-			if(!is_yb_tracing_toggled)
+			if(!prev_yb_tracing_enabled)
 			{
+				/*
+				 * We actually enable tracing here. First store the previous state of the flags and then set
+				 * the flags to the desired values.
+				 */
 				store_prev_flags();
 				log_statement = LOGSTMT_MOD;
-				is_yb_tracing_toggled = true;
+				prev_yb_tracing_enabled = true;
 			}
 		}
 		else
 		{
-			if(is_yb_tracing_toggled)
+			if(prev_yb_tracing_enabled)					/* Disable Tracing */
 			{
 				load_prev_flags();
-				is_yb_tracing_toggled = false;
+				prev_yb_tracing_enabled = false;
 			}
 		}
 

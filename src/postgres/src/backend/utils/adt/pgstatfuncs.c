@@ -2155,8 +2155,7 @@ yb_pg_enable_tracing(PG_FUNCTION_ARGS)
 	int pid = PG_GETARG_INT32(0);
 	bool ok;
 
-	/* Enable tracing for all the processes */
-	if(pid == 0)
+	if(pid == 0)						/* Enable tracing for all the processes */
 	{
 		ok = SignalTracingAllProcs(1);
 	}
@@ -2169,7 +2168,7 @@ yb_pg_enable_tracing(PG_FUNCTION_ARGS)
 	{
 		PG_RETURN_BOOL(false);
 	}
-	/* Tracing successfully enabled */
+
 	PG_RETURN_BOOL(true);
 }
 
@@ -2179,8 +2178,7 @@ yb_pg_disable_tracing(PG_FUNCTION_ARGS)
 	int pid = PG_GETARG_INT32(0);
 	bool ok;
 
-	/* Enable tracing for all the processes */
-	if(pid == 0)
+	if(pid == 0)						/* Disable tracing for all the processes */
 	{
 		ok = SignalTracingAllProcs(0);
 	}
@@ -2193,10 +2191,11 @@ yb_pg_disable_tracing(PG_FUNCTION_ARGS)
 	{
 		PG_RETURN_BOOL(false);
 	}
-	/* Tracing successfully enabled */
+	
 	PG_RETURN_BOOL(true);
 }
 
+/* Returns whether tracing is enabled for a particular pid or not */
 Datum
 is_yb_pg_tracing_enabled(PG_FUNCTION_ARGS)
 {
