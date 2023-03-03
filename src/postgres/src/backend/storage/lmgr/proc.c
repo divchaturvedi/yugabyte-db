@@ -72,6 +72,7 @@ double		RetryBackoffMultiplier;
 PGPROC	   *MyProc = NULL;
 PGXACT	   *MyPgXact = NULL;
 
+/* We need to store (and later restore) the state of the flags as they were before tracing was enabled */
 TRACE_FLAGS *PrevFlags = NULL;
 
 /*
@@ -1910,7 +1911,18 @@ BecomeLockGroupMember(PGPROC *leader, int pid)
 
 	return ok;
 }
-
+/* 
+ * As of now I have only added one flag, log_statement. If everything else is fine, other flags will be 
+ * added.
+ *
+ * Discussion : Consider the following scenario - 
+ * 
+ * Initially, log_statement = X
+ * then, tracing is enabled for this backend which sets log_statement = Y
+ * then user says, set log_statement = Z
+ * Now when tracing will be disabled, the flags will be restored to their previous values and log_statement
+ * will become X again, even though user explicitly set it to Z.
+ */
 void
 store_prev_flags(void)
 {
@@ -1924,12 +1936,5 @@ store_prev_flags(void)
 void
 load_prev_flags(void)
 {
-	/*
-	if(log_statement == LOGSTMT_ALL)
-	{
-		log_statement = PrevFlags->log_statement;
-	}
-	*/
 	log_statement = PrevFlags->log_statement;
-
 }

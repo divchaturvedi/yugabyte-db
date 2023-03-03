@@ -4157,6 +4157,7 @@ SignalTracingAllProcs(uint32 signal)
 	return true;
 }
 
+/* Enable/Disable tracing for the proc with the given pid */
 bool
 SignalTracing(uint32 signal, int pid)
 {
@@ -4185,6 +4186,7 @@ SignalTracing(uint32 signal, int pid)
 	return true;
 }
 
+/* Check whether tracing is enabled for proc with given pid */
 bool
 CheckTracingEnabled(int pid)
 {
