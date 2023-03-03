@@ -52,6 +52,7 @@
 #include "storage/procarray.h"
 #include "storage/procsignal.h"
 #include "storage/spin.h"
+#include "tcop/tcopprot.h"
 #include "utils/timeout.h"
 #include "utils/timestamp.h"
 
@@ -70,6 +71,8 @@ double		RetryBackoffMultiplier;
 /* Pointer to this process's PGPROC and PGXACT structs, if any */
 PGPROC	   *MyProc = NULL;
 PGXACT	   *MyPgXact = NULL;
+
+TRACE_FLAGS *PrevFlags = NULL;
 
 /*
  * This spinlock protects the freelist of recycled PGPROC structures.
@@ -277,6 +280,7 @@ InitProcGlobal(void)
 		 */
 		pg_atomic_init_u32(&(procs[i].procArrayGroupNext), INVALID_PGPROCNO);
 		pg_atomic_init_u32(&(procs[i].clogGroupNext), INVALID_PGPROCNO);
+		pg_atomic_init_u32(&(procs[i].is_yb_tracing_enabled), 0);
 	}
 
 	/*
@@ -1905,4 +1909,27 @@ BecomeLockGroupMember(PGPROC *leader, int pid)
 	LWLockRelease(leader_lwlock);
 
 	return ok;
+}
+
+void
+store_prev_flags(void)
+{
+	if(PrevFlags == NULL)
+	{
+		PrevFlags = (struct TRACE_FLAGS *) malloc(sizeof(TRACE_FLAGS));
+	}
+	PrevFlags->log_statement = log_statement;
+}
+
+void
+load_prev_flags(void)
+{
+	/*
+	if(log_statement == LOGSTMT_ALL)
+	{
+		log_statement = PrevFlags->log_statement;
+	}
+	*/
+	log_statement = PrevFlags->log_statement;
+
 }

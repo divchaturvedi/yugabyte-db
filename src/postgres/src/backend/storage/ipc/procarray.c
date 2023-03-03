@@ -4132,3 +4132,77 @@ KnownAssignedXidsReset(void)
 
 	LWLockRelease(ProcArrayLock);
 }
+
+/* Enable/Disable tracing for all connected backends */
+bool
+SignalTracingAllProcs(uint32 signal)
+{
+	ProcArrayStruct *arrayP = procArray;
+	int			index;
+
+	LWLockAcquire(ProcArrayLock, LW_SHARED);
+	for (index = 0; index < arrayP->numProcs; index++)
+	{
+		int			pgprocno = arrayP->pgprocnos[index];
+		volatile PGPROC *proc = &allProcs[pgprocno];
+
+		if(proc->pid == 0)
+			continue;	/* do not count prepared xacts */
+		if(proc->isBackgroundWorker)
+			continue;	/*do not count background workers*/
+		pg_atomic_write_u32(&proc->is_yb_tracing_enabled, signal);
+	}
+	LWLockRelease(ProcArrayLock);
+
+	return true;
+}
+
+bool
+SignalTracing(uint32 signal, int pid)
+{
+	ProcArrayStruct *arrayP = procArray;
+	int			index;
+	bool		found = false;
+
+	LWLockAcquire(ProcArrayLock, LW_SHARED);
+	for (index = 0; index < arrayP->numProcs; index++)
+	{
+		int			pgprocno = arrayP->pgprocnos[index];
+		PGPROC *proc = &allProcs[pgprocno];
+		if(proc->pid == pid)
+		{
+			found = true;
+			pg_atomic_write_u32(&proc->is_yb_tracing_enabled, signal);
+			break;
+		}
+	}
+	LWLockRelease(ProcArrayLock);
+
+	if(!found)
+	{
+		return false;
+	}
+	return true;
+}
+
+bool
+CheckTracingEnabled(int pid)
+{
+	ProcArrayStruct *arrayP = procArray;
+	int			index;
+	bool		is_tracing_enabled;
+	LWLockAcquire(ProcArrayLock, LW_SHARED);
+	for (index = 0; index < arrayP->numProcs; index++)
+	{
+		int			pgprocno = arrayP->pgprocnos[index];
+		PGPROC *proc = &allProcs[pgprocno];
+		if(proc->pid == pid)
+		{
+			is_tracing_enabled = pg_atomic_read_u32(&proc->is_yb_tracing_enabled);
+			LWLockRelease(ProcArrayLock);
+			return is_tracing_enabled;
+		}
+	}
+	LWLockRelease(ProcArrayLock);
+	return false;
+}

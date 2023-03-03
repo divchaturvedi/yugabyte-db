@@ -92,6 +92,7 @@
  *		global variables
  * ----------------
  */
+bool is_yb_tracing_toggled = false;
 const char *debug_query_string; /* client-supplied query string */
 
 /* Note: whereToSendOutput is initialized for the bootstrap/standalone case */
@@ -5119,6 +5120,24 @@ PostgresMain(int argc, char *argv[],
 		 */
 		MemoryContextSwitchTo(MessageContext);
 		MemoryContextResetAndDeleteChildren(MessageContext);
+
+		if(pg_atomic_read_u32(&MyProc->is_yb_tracing_enabled))
+		{
+			if(!is_yb_tracing_toggled)
+			{
+				store_prev_flags();
+				log_statement = LOGSTMT_MOD;
+				is_yb_tracing_toggled = true;
+			}
+		}
+		else
+		{
+			if(is_yb_tracing_toggled)
+			{
+				load_prev_flags();
+				is_yb_tracing_toggled = false;
+			}
+		}
 
 		initStringInfo(&input_message);
 
