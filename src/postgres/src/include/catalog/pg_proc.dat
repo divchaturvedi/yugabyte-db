@@ -10422,4 +10422,16 @@
   prorettype => 'cstring', proargtypes => '',
   prosrc => 'yb_get_effective_transaction_isolation_level' },
 
+  { oid => '8058', descr => 'Enable yb tracing',
+  proname => 'yb_pg_enable_tracing', provolatile => 's', proparallel => 'r',
+  prorettype => 'bool', proargtypes => 'int4', prosrc => 'yb_pg_enable_tracing' },
+
+  { oid => '8059', descr => 'Disable yb tracing',
+  proname => 'yb_pg_disable_tracing', provolatile => 's', proparallel => 'r',
+  prorettype => 'bool', proargtypes => 'int4', prosrc => 'yb_pg_disable_tracing' },
+
+  { oid => '8060', descr => 'Check if yb tracing is enabled',
+  proname => 'is_yb_pg_tracing_enabled', provolatile => 's', proparallel => 'r',
+  prorettype => 'bool', proargtypes => 'int4', prosrc => 'is_yb_pg_tracing_enabled' },
+
 ]

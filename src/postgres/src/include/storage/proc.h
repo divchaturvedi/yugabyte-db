@@ -76,6 +76,13 @@ struct XidCache
  */
 #define INVALID_PGPROCNO		PG_INT32_MAX
 
+typedef struct TRACE_FLAGS
+{
+	int log_statement;
+
+} TRACE_FLAGS;
+
+extern PGDLLIMPORT TRACE_FLAGS *PrevFlags;
 /*
  * Each backend has a PGPROC struct in shared memory.  There is also a list of
  * currently-unused PGPROC structs that will be reallocated to new backends.
@@ -108,6 +115,8 @@ struct PGPROC
 								 * else InvalidLocalTransactionId */
 	int			pid;			/* Backend's process ID; 0 if prepared xact */
 	int			pgprocno;
+
+	pg_atomic_uint32 is_yb_tracing_enabled;
 
 	/* These fields are zero while a backend is still starting up: */
 	BackendId	backendId;		/* This backend's backend ID (if assigned) */
@@ -341,5 +350,8 @@ extern PGPROC *AuxiliaryPidGetProc(int pid);
 
 extern void BecomeLockGroupLeader(void);
 extern bool BecomeLockGroupMember(PGPROC *leader, int pid);
+
+extern void store_prev_flags(void);
+extern void load_prev_flags(void);
 
 #endif							/* PROC_H */

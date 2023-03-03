@@ -2147,3 +2147,67 @@ yb_pg_stat_retrieve_concurrent_index_progress()
 
 	return progress;
 }
+
+Datum
+yb_pg_enable_tracing(PG_FUNCTION_ARGS)
+{
+	
+	int pid = PG_GETARG_INT32(0);
+	bool ok;
+
+	/* Enable tracing for all the processes */
+	if(pid == 0)
+	{
+		ok = SignalTracingAllProcs(1);
+	}
+	else
+	{
+		ok = SignalTracing(1, pid);
+	}
+	
+	if(!ok)
+	{
+		PG_RETURN_BOOL(false);
+	}
+	/* Tracing successfully enabled */
+	PG_RETURN_BOOL(true);
+}
+
+Datum
+yb_pg_disable_tracing(PG_FUNCTION_ARGS)
+{
+	int pid = PG_GETARG_INT32(0);
+	bool ok;
+
+	/* Enable tracing for all the processes */
+	if(pid == 0)
+	{
+		ok = SignalTracingAllProcs(0);
+	}
+	else
+	{
+		ok = SignalTracing(0, pid);
+	}
+	
+	if(!ok)
+	{
+		PG_RETURN_BOOL(false);
+	}
+	/* Tracing successfully enabled */
+	PG_RETURN_BOOL(true);
+}
+
+Datum
+is_yb_pg_tracing_enabled(PG_FUNCTION_ARGS)
+{
+	int pid = PG_GETARG_INT32(0);
+
+	if(pid == 0)
+	{
+		PG_RETURN_BOOL(false);
+	}
+	
+	bool is_tracing_enabled = CheckTracingEnabled(pid);
+	
+	PG_RETURN_BOOL(is_tracing_enabled);
+}
