@@ -428,7 +428,7 @@ class PgSession : public RefCountedThreadSafe<PgSession> {
   nostd::shared_ptr<opentelemetry::trace::Tracer> query_tracer_;
   nostd::shared_ptr<opentelemetry::trace::Span> query_span_;
 
-  std::string trace_file_name_base_ = "/home/asaha/var/logs/tserver/";
+  std::string trace_file_name_base_ = "/home/centos/var/logs/tserver/";
   std::string trace_file_name_;
   std::shared_ptr<std::ofstream> trace_file_handle_ = nullptr;
 };

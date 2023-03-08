@@ -386,15 +386,15 @@ macro(yb_find_third_party_dependencies)
   ADD_THIRDPARTY_LIB(cassandra SHARED_LIB "${LIBCASSANDRA_SHARED_LIB}")
 
   ## Otel
-  set(OTEL_INCLUDE_DIR "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/include")
-  set(OTEL_TRACE_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_trace.so")
-  set(OTEL_EXPORTER_MEMORY_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_exporter_in_memory.so")
-  set(OTEL_EXPORTER_OSTREAM_METRICS_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_exporter_ostream_metrics.so")
-  set(OTEL_EXPORTER_OSTREAM_SPAN_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_exporter_ostream_span.so")
-  set(OTEL_COMMON_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_common.so")
-  set(OTEL_METRICS_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_metrics.so")
-  set(OTEL_RESOURCES_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_resources.so")
-  set(OTEL_VERSION_SHARED_LIB "/home/asaha/code/yugabyte-db-thirdparty/installed/uninstrumented/lib/libopentelemetry_version.so")
+  set(OTEL_INCLUDE_DIR "${YB_THIRDPARTY_INSTALLED_DIR}/include")
+  set(OTEL_TRACE_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_trace.so")
+  set(OTEL_EXPORTER_MEMORY_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_exporter_in_memory.so")
+  set(OTEL_EXPORTER_OSTREAM_METRICS_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_exporter_ostream_metrics.so")
+  set(OTEL_EXPORTER_OSTREAM_SPAN_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_exporter_ostream_span.so")
+  set(OTEL_COMMON_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_common.so")
+  set(OTEL_METRICS_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_metrics.so")
+  set(OTEL_RESOURCES_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_resources.so")
+  set(OTEL_VERSION_SHARED_LIB "${YB_THIRDPARTY_INSTALLED_DIR_BASE}/uninstrumented/lib/libopentelemetry_version.so")
 
   find_package(opentelemetry-cpp CONFIG REQUIRED)
   include_directories(SYSTEM ${OTEL_INCLUDE_DIR})
@@ -408,7 +408,7 @@ macro(yb_find_third_party_dependencies)
   ADD_THIRDPARTY_LIB(opentelemetry_resources SHARED_LIB "${OTEL_RESOURCES_LIB}")
   ADD_THIRDPARTY_LIB(opentelemetry_version SHARED_LIB "${OTEL_VERSION_SHARED_LIB}")
 
-  list(APPEND YB_BASE_LIBS 
+  list(APPEND YB_BASE_LIBS
     opentelemetry_trace
     opentelemetry_exporter_in_memory
     opentelemetry_exporter_ostream_metrics
