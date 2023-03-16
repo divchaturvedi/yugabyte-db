@@ -1539,9 +1539,21 @@ Status PgApiImpl::ExecSelect(PgStatement *handle, const PgExecParameters *exec_p
   return dml_read.Exec(exec_params);
 }
 
+//--------------------------------------------------------------------------------------------------
+// Traces.
+//--------------------------------------------------------------------------------------------------
+
 Status PgApiImpl::StartTraceForQuery() { return pg_session_->StartTraceForQuery(); }
 
 Status PgApiImpl::StopTraceForQuery() { return pg_session_->StopTraceForQuery(); }
+
+Status PgApiImpl::StartQueryEvent(const char *event_name) {
+  return pg_session_->StartQueryEvent(event_name);
+}
+
+Status PgApiImpl::StopQueryEvent(const char *event_name) {
+  return pg_session_->StopQueryEvent(event_name);
+}
 
 //--------------------------------------------------------------------------------------------------
 // Expressions.

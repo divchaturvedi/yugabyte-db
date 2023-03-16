@@ -32,6 +32,7 @@
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
 #include "opentelemetry/trace/provider.h"
+#include "opentelemetry/trace/span_metadata.h"
 
 #include "yb/client/table_info.h"
 
@@ -449,33 +450,39 @@ Status PgSession::StartTraceForQuery() {
   InitTracer();
   auto provider = opentelemetry::trace::Provider::GetTracerProvider();
   this->query_tracer_ = provider->GetTracer("pg_session", OPENTELEMETRY_SDK_VERSION);
-  this->query_span_ = this->query_tracer_->StartSpan("Create span : handle request");
-  auto scope = this->query_tracer_->WithActiveSpan(this->query_span_);
-  {
-    auto outer_span = this->query_tracer_->StartSpan("Outer operation");
-    auto outer_scope = this->query_tracer_->WithActiveSpan(outer_span);
-    {
-        auto inner_span = this->query_tracer_->StartSpan("Inner operation");
-        auto inner_scope = this->query_tracer_->WithActiveSpan(inner_span);
-        // ... perform inner operation
-        inner_span->End();
-    }
-    // ... perform outer operation
-    outer_span->End();
-  }
-  {
-    auto sibling_span = this->query_tracer_->StartSpan("Sibling operation");
-    auto sibling_scope = this->query_tracer_->WithActiveSpan(sibling_span);
-    sibling_span->End();
-  }
+  auto span = this->query_tracer_->StartSpan("Statement");
+  this->spans_.push(span);
+  this->tokens_.push(opentelemetry::context::RuntimeContext::Attach(
+      opentelemetry::context::RuntimeContext::GetCurrent().SetValue(opentelemetry::trace::kSpanKey, span)));
   return Status::OK();
 }
 
 Status PgSession::StopTraceForQuery() {
-  this->query_span_->End();
+  nostd::shared_ptr<opentelemetry::trace::Span> span = this->spans_.top();
+  span->End();
+  this->tokens_.pop();
+  this->spans_.pop();
   CleanupTracer();
   return Status::OK();
 }
+
+Status PgSession::StartQueryEvent(const char* event_name) {
+  auto span = this->query_tracer_->StartSpan(event_name);
+  this->spans_.push(span);
+  this->tokens_.push(
+      opentelemetry::context::RuntimeContext::Attach(
+          opentelemetry::context::RuntimeContext::GetCurrent().SetValue(opentelemetry::trace::kSpanKey, span)));
+  return Status::OK();
+}
+
+Status PgSession::StopQueryEvent(const char* event_name) {
+  nostd::shared_ptr<opentelemetry::trace::Span> span = this->spans_.top();
+  span->End();
+  this->tokens_.pop();
+  this->spans_.pop();
+  return Status::OK();
+}
+
 //--------------------------------------------------------------------------------------------------
 
 Status PgSession::DropTable(const PgObjectId& table_id) {
