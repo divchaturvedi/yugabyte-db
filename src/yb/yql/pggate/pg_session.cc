@@ -33,6 +33,8 @@
 #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
 #include "opentelemetry/trace/provider.h"
 #include "opentelemetry/trace/span_metadata.h"
+#include "opentelemetry/sdk/resource/semantic_conventions.h"
+#include "opentelemetry/trace/semantic_conventions.h"
 
 #include "yb/client/table_info.h"
 
@@ -446,11 +448,13 @@ Status PgSession::DeleteDBSequences(int64_t db_oid) {
 
 //--------------------------------------------------------------------------------------------------
 
-Status PgSession::StartTraceForQuery() {
-  InitTracer();
+Status PgSession::StartTraceForQuery(int pid) {
+  InitTracer(pid);
   auto provider = opentelemetry::trace::Provider::GetTracerProvider();
   this->query_tracer_ = provider->GetTracer("pg_session", OPENTELEMETRY_SDK_VERSION);
-  auto span = this->query_tracer_->StartSpan("Statement");
+  auto span = this->query_tracer_->StartSpan("Statement",
+    {{opentelemetry::trace::SemanticConventions::kCodeFunction, "PgSession::StartTraceForQuery"},
+     {opentelemetry::trace::SemanticConventions::kCodeLineno, "456"}});
   this->spans_.push(span);
   this->tokens_.push(opentelemetry::context::RuntimeContext::Attach(
       opentelemetry::context::RuntimeContext::GetCurrent().SetValue(opentelemetry::trace::kSpanKey, span)));
@@ -889,14 +893,17 @@ std::string PgSession::GetTraceFileName() {
   return trace_file_name_base_ + "trace_" + std::to_string(rand()) + ".log";
 }
 
-void PgSession::InitTracer() {
+void PgSession::InitTracer(int pid) {
   trace_file_name_ = GetTraceFileName();
   std::cout << "Starting tracing log file at: " << trace_file_name_ << std::endl;
   trace_file_handle_ = std::make_shared<std::ofstream>(std::ofstream(trace_file_name_.c_str()));
   auto exporter = trace_exporter::OStreamSpanExporterFactory::Create(*trace_file_handle_.get());
   auto processor = sdktrace::SimpleSpanProcessorFactory::Create(std::move(exporter));
+  auto resource = opentelemetry::sdk::resource::Resource::Create(
+    {{opentelemetry::sdk::resource::SemanticConventions::kServiceName, "PG_SERVICE"},
+     {opentelemetry::sdk::resource::SemanticConventions::kProcessPid, std::to_string(pid)}});
   std::shared_ptr<opentelemetry::trace::TracerProvider> provider_ =
-      sdktrace::TracerProviderFactory::Create(std::move(processor));
+      sdktrace::TracerProviderFactory::Create(std::move(processor), resource);
   trace::Provider::SetTracerProvider(provider_);
 }
 

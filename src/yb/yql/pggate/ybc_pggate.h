@@ -522,7 +522,7 @@ void YBCGetAndResetReadRpcStats(YBCPgStatement handle, uint64_t* reads, uint64_t
                                 uint64_t* tbl_reads, uint64_t* tbl_read_wait);
 
 // Trace Functions
-YBCStatus YBCStartTraceForQuery();
+YBCStatus YBCStartTraceForQuery(int pid);
 YBCStatus YBCStopTraceForQuery();
 
 YBCStatus YBCStartQueryEvent(const char* event_name);

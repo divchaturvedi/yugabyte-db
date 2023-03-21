@@ -4664,7 +4664,7 @@ yb_exec_simple_query_impl(const void* query_string)
 static void
 yb_exec_simple_query(const char* query_string, MemoryContext exec_context)
 {
-	YBCStartTraceForQuery();
+	YBCStartTraceForQuery(MyProc->pid);
 	YBQueryRestartData restart_data  = {
 		.portal_name  = NULL,
 		.query_string = query_string,
