@@ -57,6 +57,8 @@
 #include "rewrite/rewriteManip.h"
 #include "storage/bufmgr.h"
 #include "storage/lmgr.h"
+#include "storage/proc.h"
+#include "storage/procarray.h"
 #include "tcop/utility.h"
 #include "utils/acl.h"
 #include "utils/lsyscache.h"
@@ -458,6 +460,11 @@ standard_ExecutorFinish(QueryDesc *queryDesc)
 void
 ExecutorEnd(QueryDesc *queryDesc)
 {
+	int current_tracing = CheckTracingEnabled(MyProc->pid);
+	if(current_tracing & 1)			/* Tracing is enabled by query */
+	{
+		SignalTracing(1,MyProc->pid);
+	}
 	if (ExecutorEnd_hook)
 		(*ExecutorEnd_hook) (queryDesc);
 	else

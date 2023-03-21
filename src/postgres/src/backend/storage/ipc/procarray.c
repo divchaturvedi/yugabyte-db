@@ -94,6 +94,8 @@ typedef struct ProcArrayStruct
 	/* oldest catalog xmin of any replication slot */
 	TransactionId replication_slot_catalog_xmin;
 
+	int64		traced_queries[TRACED_QUERIES_SIZE];
+	int			current_traced_queries;
 	/* indexes into allPgXact[], has PROCARRAY_MAXPROCS entries */
 	int			pgprocnos[FLEXIBLE_ARRAY_MEMBER];
 } ProcArrayStruct;
@@ -248,6 +250,7 @@ CreateSharedProcArray(void)
 		procArray->lastOverflowedXid = InvalidTransactionId;
 		procArray->replication_slot_xmin = InvalidTransactionId;
 		procArray->replication_slot_catalog_xmin = InvalidTransactionId;
+		procArray->current_traced_queries = 0;
 	}
 
 	allProcs = ProcGlobal->allProcs;
@@ -4150,7 +4153,9 @@ SignalTracingAllProcs(uint32 signal)
 			continue;	/* do not count prepared xacts */
 		if(proc->isBackgroundWorker)
 			continue;	/*do not count background workers*/
-		pg_atomic_write_u32(&proc->is_yb_tracing_enabled, signal);
+		int current = pg_atomic_read_u32(&proc->is_yb_tracing_enabled);
+		current = current ^ signal;
+		pg_atomic_write_u32(&proc->is_yb_tracing_enabled, current);
 	}
 	LWLockRelease(ProcArrayLock);
 
@@ -4173,7 +4178,9 @@ SignalTracing(uint32 signal, int pid)
 		if(proc->pid == pid)
 		{
 			found = true;
-			pg_atomic_write_u32(&proc->is_yb_tracing_enabled, signal);
+			int current = pg_atomic_read_u32(&proc->is_yb_tracing_enabled);
+			current = current ^ signal;
+			pg_atomic_write_u32(&proc->is_yb_tracing_enabled, current);
 			break;
 		}
 	}
@@ -4187,12 +4194,12 @@ SignalTracing(uint32 signal, int pid)
 }
 
 /* Check whether tracing is enabled for proc with given pid */
-bool
+int
 CheckTracingEnabled(int pid)
 {
 	ProcArrayStruct *arrayP = procArray;
 	int			index;
-	bool		is_tracing_enabled;
+	int		is_tracing_enabled;
 	LWLockAcquire(ProcArrayLock, LW_SHARED);
 	for (index = 0; index < arrayP->numProcs; index++)
 	{
@@ -4206,5 +4213,76 @@ CheckTracingEnabled(int pid)
 		}
 	}
 	LWLockRelease(ProcArrayLock);
+	return 0;
+}
+
+bool
+EnableQueryTracing(uint64 queryId)
+{
+	/*
+	 * Todo - 
+	 * Check if number of queries traced do not exceed the maximum number of queries that can be traced.
+	 * If they do, remove the oldest used entry.
+	 */
+	
+	ProcArrayStruct *arrayP = procArray;
+	int index;
+	LWLockAcquire(ProcArrayLock, LW_EXCLUSIVE);
+	
+	for (index = 0; index < arrayP->current_traced_queries; index++)
+	{
+		if(arrayP->traced_queries[index] == queryId)
+		{
+			LWLockRelease(ProcArrayLock);
+			return false; /* Tracing is already enabled for the given query id */
+		}
+	}
+
+	arrayP->traced_queries[arrayP->current_traced_queries] = queryId;
+	arrayP->current_traced_queries++;
+	LWLockRelease(ProcArrayLock);
+	return true;
+}
+
+bool
+DisableQueryTracing(uint64 queryId)
+{
+	ProcArrayStruct *arrayP = procArray;
+	int index;
+	LWLockAcquire(ProcArrayLock, LW_EXCLUSIVE);
+
+	for (index = 0; index < arrayP->current_traced_queries; index++)
+	{
+		if(arrayP->traced_queries[index] == queryId)
+		{
+			memmove(&arrayP->traced_queries[index], &arrayP->traced_queries[index + 1],
+					(arrayP->current_traced_queries - index - 1) * sizeof(int64));
+			arrayP->current_traced_queries--;
+			LWLockRelease(ProcArrayLock);
+			return true;
+		}
+	}
+
+	LWLockRelease(ProcArrayLock);
 	return false;
+}
+
+void
+CheckQueryTracing(uint64 queryId)
+{
+	ProcArrayStruct *arrayP = procArray;
+	int index;
+	LWLockAcquire(ProcArrayLock, LW_SHARED);
+	
+	for (index = 0; index < arrayP->current_traced_queries; index++)
+	{
+		if(arrayP->traced_queries[index] == queryId)
+		{
+			LWLockRelease(ProcArrayLock);
+			SignalTracing(1,MyProc->pid);
+			return ;
+		}
+	}
+
+	LWLockRelease(ProcArrayLock);
 }

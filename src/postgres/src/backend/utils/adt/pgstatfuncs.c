@@ -2157,11 +2157,11 @@ yb_pg_enable_tracing(PG_FUNCTION_ARGS)
 
 	if(pid == 0)						/* Enable tracing for all the processes */
 	{
-		ok = SignalTracingAllProcs(1);
+		ok = SignalTracingAllProcs(2);
 	}
 	else
 	{
-		ok = SignalTracing(1, pid);
+		ok = SignalTracing(2, pid);
 	}
 	
 	if(!ok)
@@ -2180,11 +2180,11 @@ yb_pg_disable_tracing(PG_FUNCTION_ARGS)
 
 	if(pid == 0)						/* Disable tracing for all the processes */
 	{
-		ok = SignalTracingAllProcs(0);
+		ok = SignalTracingAllProcs(2);
 	}
 	else
 	{
-		ok = SignalTracing(0, pid);
+		ok = SignalTracing(2, pid);
 	}
 	
 	if(!ok)
@@ -2209,4 +2209,24 @@ is_yb_pg_tracing_enabled(PG_FUNCTION_ARGS)
 	bool is_tracing_enabled = CheckTracingEnabled(pid);
 	
 	PG_RETURN_BOOL(is_tracing_enabled);
+}
+
+Datum
+yb_pg_enable_query_tracing(PG_FUNCTION_ARGS)
+{
+	uint64 queryId = PG_GETARG_UINT32(0);
+
+	bool ok = EnableQueryTracing(queryId);
+
+	PG_RETURN_BOOL(ok);
+}
+
+Datum
+yb_pg_disable_query_tracing(PG_FUNCTION_ARGS)
+{
+	int64 queryId = PG_GETARG_UINT32(0);
+
+	bool ok = DisableQueryTracing(queryId);
+
+	PG_RETURN_BOOL(ok);
 }

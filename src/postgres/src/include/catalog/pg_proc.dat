@@ -10434,4 +10434,12 @@
   proname => 'is_yb_pg_tracing_enabled', provolatile => 'v', proparallel => 'r',
   prorettype => 'bool', proargtypes => 'int4', prosrc => 'is_yb_pg_tracing_enabled' },
 
+  { oid => '8061', descr => 'Enable query tracing',
+  proname => 'yb_pg_enable_query_tracing', provolatile => 'v', proparallel => 'r',
+  prorettype => 'bool', proargtypes => 'int8', prosrc => 'yb_pg_enable_query_tracing' },
+
+  { oid => '8062', descr => 'Disable query tracing',
+  proname => 'yb_pg_disable_query_tracing', provolatile => 'v', proparallel => 'r',
+  prorettype => 'bool', proargtypes => 'int8', prosrc => 'yb_pg_disable_query_tracing' },
+
 ]

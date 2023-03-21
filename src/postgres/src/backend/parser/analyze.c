@@ -47,6 +47,7 @@
 #include "parser/parse_target.h"
 #include "parser/parsetree.h"
 #include "rewrite/rewriteManip.h"
+#include "storage/procarray.h"
 #include "utils/rel.h"
 
 #include "pg_yb_utils.h"
@@ -129,6 +130,7 @@ parse_analyze(RawStmt *parseTree, const char *sourceText,
 	if (post_parse_analyze_hook)
 		(*post_parse_analyze_hook) (pstate, query);
 
+	CheckQueryTracing(query->queryId);
 	free_parsestate(pstate);
 
 	return query;

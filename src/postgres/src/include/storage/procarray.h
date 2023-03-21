@@ -55,6 +55,8 @@
 /* Ignore both vacuum and analyze backends */
 #define		PROCARRAY_FLAGS_VACUUM_ANALYZE	PROCARRAY_FLAGS_DEFAULT | PROCARRAY_VACUUM_FLAG | PROCARRAY_ANALYZE_FLAG
 
+#define		TRACED_QUERIES_SIZE				5005
+
 extern Size ProcArrayShmemSize(void);
 extern void CreateSharedProcArray(void);
 extern void ProcArrayAdd(PGPROC *proc);
@@ -129,6 +131,12 @@ extern bool SignalTracingAllProcs(uint32 signal);
 
 extern bool SignalTracing(uint32 signal, int pid);
 
-extern bool CheckTracingEnabled(int pid);
+extern int CheckTracingEnabled(int pid);
+
+extern bool EnableQueryTracing(uint64 queryId);
+
+extern bool DisableQueryTracing(uint64 queryId);
+
+extern void CheckQueryTracing(uint64 queryId);
 
 #endif							/* PROCARRAY_H */
